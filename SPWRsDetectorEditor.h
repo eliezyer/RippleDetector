@@ -22,13 +22,11 @@
 */
 
 
-#ifndef __SPWRSDETECTOREDITOR_H_136829C6__
-#define __SPWRSDETECTOREDITOR_H_136829C6__
+#ifndef EXAMPLEEDITOR_H_INCLUDED
+#define EXAMPLEEDITOR_H_INCLUDED
 
-#include "../../../JuceLibraryCode/JuceHeader.h"
+#include <EditorHeaders.h>
 
-#include "../Editors/GenericEditor.h"
-#include "../Editors/ElectrodeButtons.h"
 
 class SPWRsInterface;
 class SPWRsDetector;

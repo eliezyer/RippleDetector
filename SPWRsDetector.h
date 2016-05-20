@@ -24,9 +24,12 @@
 #ifndef __SPWRSDETECTOR_H_F411F29D__
 #define __SPWRSDETECTOR_H_F411F29D__
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
-#include "../../../JuceLibraryCode/JuceHeader.h"
-#include "../GenericProcessor/GenericProcessor.h"
+#include <ProcessorHeaders.h>
+
 
 #define NUM_INTERVALS 5
 

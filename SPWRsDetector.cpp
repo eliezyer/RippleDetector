@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <algorithm>
 #include "SPWRsDetector.h"
 #include "SPWRsDetectorEditor.h"
 
@@ -182,6 +183,7 @@ void SPWRsDetector::handleEvent(int eventType, MidiMessage& event, int sampleNum
 void SPWRsDetector::process(AudioSampleBuffer& buffer,
                             MidiBuffer& events)
 {
+    Time time;
     checkForEvents(events);
     // loop through the modules
     for (int i = 0; i < modules.size(); i++)
@@ -198,8 +200,7 @@ void SPWRsDetector::process(AudioSampleBuffer& buffer,
            {*/
             
             //Comecando a contar o tempo do algoritmo aqui
-            t = clock();
-            double firstT = time(NULL);
+            t = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
             double arrSized = round(getNumSamples(module.inputChan)/4);
             int arrSize = (int) arrSized;
             float RMS[arrSize];
@@ -242,31 +243,33 @@ void SPWRsDetector::process(AudioSampleBuffer& buffer,
                 
                 if (module.flag == 1)
                 {
-                    t3 = clock() - module.tReft;
-                    RefratTime = ( t3 / CLOCKS_PER_SEC);
+                    t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//clock() - module.tReft;
+                    RefratTime = t3;
                 }
                 else
                 {
-                    RefratTime = 0.2;
+                    RefratTime = 0.3;
                 }
        
-                if (count == round(arrSize*0.60) & RefratTime > 0.1 ) //enforca gato
+                if (count == round(arrSize*0.60) & RefratTime > 0.2 )
                 {
                         module.flag = 1;
-                        module.tReft = clock();
-                        double timeStamp2 = (module.tReft - t)/CLOCKS_PER_SEC; 
+                        module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
+                        double timeStamp2 = (module.tReft - t); 
                         
+                        //salving the script delay
                         FILE *f = fopen("timeStamps.txt", "a+");
                         
-                        fprintf(f,"%f\n ",timeStamp2);
+                        fprintf(f,"%f\n ",timeStamp2*1000);
 
                         fclose(f); 
                         
+    
                         addEvent(events, TTL, i, 1, module.outputChan);
                         module.samplesSinceTrigger = 0;
 
                         module.wasTriggered = true;
-                     
+                        //std::cout << averageTime << std::endl;
                 }
                 module.lastSample = sample;
 
