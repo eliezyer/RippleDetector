@@ -237,7 +237,7 @@ void SPWRsDetector::process(AudioSampleBuffer& buffer,
                 const float sample = RMS[i];
                 double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4));
                 
-                if ( sample >=  threshold & RefratTime > 0.2 )
+                if ( sample >=  threshold & RefratTime > 2 )
                 {
                   module.count++;
                 }
@@ -252,10 +252,10 @@ void SPWRsDetector::process(AudioSampleBuffer& buffer,
                 }
                 else
                 {
-                    RefratTime = 0.3;
+                    RefratTime = 3;
                 }
        
-                if (module.count >= round(0.020*30000/4) & RefratTime > 0.2 ) // o original qdo utilizado com buffer de 1024 pontos é um tamanho de 20 ms (154/(30000/4))
+                if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) // o original qdo utilizado com buffer de 1024 pontos é um tamanho de 20 ms (154/(30000/4))
                 {
                         module.flag = 1;
 			module.count = 0;
