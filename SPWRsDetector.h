@@ -89,6 +89,7 @@ private:
         int AvgCount;
         int flag;
         double tReft;
+	int count;
         ModuleType type;
         PhaseType phase;
     };
