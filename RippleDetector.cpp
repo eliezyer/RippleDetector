@@ -54,6 +54,7 @@ void RippleDetector::addModule()
     m.outputChan = -1;
     m.gateChan = -1;
     m.isActive = true;
+    m.lastSample = 0.0;
     m.type = NONE;
     m.samplesSinceTrigger = 5000;
     m.wasTriggered = false;
@@ -64,7 +65,6 @@ void RippleDetector::addModule()
     m.flag = 0;
     m.tReft = 0.0;
     m.count = 0;
-    m.lastSample = 0.0;
     
     
     modules.add(m);
@@ -224,18 +224,21 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                     break;
                 }
             }
-            int count = 0;
+
             for (int i = 0; i < arrSize; i++)
             {
             
                 const float sample = RMS[i];
-                double threshold = module.MED + 2*sqrt(module.STD/(module.AvgCount*4));
+                double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4));
                 
-                if ( sample >=  threshold  )
+                if ( sample >=  threshold & RefratTime > 2 )
                 {
-                  count++;
+                  module.count++;
                 }
-                
+		else if(sample < threshold & i == 0)//protect from acumulation
+		{
+		  module.count = 0;
+ 		}               
                 if (module.flag == 1)
                 {
                     t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//clock() - module.tReft;
@@ -243,21 +246,22 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                 }
                 else
                 {
-                    RefratTime = 0.3;
+                    RefratTime = 3;
                 }
        
-                if (count == round(arrSize*0.60) & RefratTime > 0.2 )
+                if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) // o original qdo utilizado com buffer de 1024 pontos é um tamanho de 20 ms (154/(30000/4))
                 {
                         module.flag = 1;
+			module.count = 0;
                         module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
-                        double timeStamp2 = (module.tReft - t); 
+                        //double timeStamp2 = (module.tReft - t); 
                         
-                        //salving the script delay
-                        FILE *f = fopen("timeStamps.txt", "a+");
+                        //saving the script delay
+                 //       FILE *f = fopen("timeStamps.txt", "a+");
                         
-                        fprintf(f,"%f\n ",timeStamp2*1000);
+                 //       fprintf(f,"%f\n ",timeStamp2*1000);
 
-                        fclose(f); 
+                 //       fclose(f); 
                         
     
                         addEvent(events, TTL, i, 1, module.outputChan);
