@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <PluginInfo.h>
-#include "SPWRsDetector.h"
+#include "RippleDetector.h"
 #include <string>
 #ifdef WIN32
 #include <Windows.h>
@@ -52,9 +52,9 @@ extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 	case 0:
 		info->type = Plugin::ProcessorPlugin; //Type of plugin. See "Source/Processors/PluginManager/OpenEphysPlugin.h" for complete info about the different type structures
 		//For processor
-		info->processor.name = "SPWRs Detector"; //Processor name shown in the GUI
+		info->processor.name = "Ripple Detector"; //Processor name shown in the GUI
 		info->processor.type = Plugin::FilterProcessor; //Type of processor. Can be FilterProcessor, SourceProcessor, SinkProcessor or UtilityProcessor. Specifies where on the processor list will appear
-		info->processor.creator = &(Plugin::createProcessor<SPWRsDetector>); //Class factory pointer. Replace "ExampleProcessor" with the name of your class.
+		info->processor.creator = &(Plugin::createProcessor<RippleDetector>); //Class factory pointer. Replace "ExampleProcessor" with the name of your class.
 		break;
 /**
 Examples for other plugin types
