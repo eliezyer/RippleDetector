@@ -14,9 +14,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
- 
-//easy way to do a envelope, do a findpeaks for the entire buff (like the phase detector) and then create a polynomial regression in the points. 
-//a good idea would be to plot this data, maybe create a new channel and put the envelope in it with write pointer.
 
 #include <stdio.h>
 #include <math.h>
@@ -176,9 +173,9 @@ void RippleDetector::handleEvent(int eventType, MidiMessage& event, int sampleNu
 }
 
 void RippleDetector::process(AudioSampleBuffer& buffer,
-                            MidiBuffer& events)
+                            MidiBuffer& events) //This is the core of the code, is the script that will run when every buffer comes
 {
-    Time time;
+    Time time; //I'm using a library to count time
     checkForEvents(events);
     // loop through the modules
     for (int i = 0; i < modules.size(); i++)
@@ -188,18 +185,13 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
         double t;    
         double t3;
         double RefratTime;
-        // check to see if it's active and has a channel
-        /*if (module.isActive && module.outputChan >= 0 &&
-            module.inputChan >= 0 &&
-            module.inputChan < buffer.getNumChannels())
-           {*/
             
-            //Comecando a contar o tempo do algoritmo aqui
-            t = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
-            double arrSized = round(getNumSamples(module.inputChan)/4);
+            
+            t = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());//Starting to count time for the script here
+            double arrSized = round(getNumSamples(module.inputChan)/4);//the following 3 lines are to create an array of specific size for saving the RMS from buffer
             int arrSize = (int) arrSized;
             float RMS[arrSize];
-            for (int index = 0; index < arrSize; index++)
+            for (int index = 0; index < arrSize; index++) //here the RMS is calculated
             {
                 RMS[index] = sqrt( (
                    pow(buffer.getSample(module.inputChan,(index*4)),2) +
@@ -211,13 +203,13 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
             
             for (int pac = 0; pac < arrSize; pac++)
             {
-                if (module.AvgCount < 60000/4)
+                if (module.AvgCount < 60000/4) //Using the RMS value in the first 2 s as baseline to build a threshold of detection
                 {
-                    module.AvgCount++;
+                    module.AvgCount++; // all the values that must be saved from one buffer to other has to be save in another function outside the process (this function), when I need to save values to reuse in the next buffer I use the structure module from addModule function
                     float var = RMS[pac];
                     float delta = var - module.MED;
-                    module.MED = module.MED + (delta/module.AvgCount); 
-                    module.STD = module.STD + delta*(var-module.MED);
+                    module.MED = module.MED + (delta/module.AvgCount); //calculates average for threshold
+                    module.STD = module.STD + delta*(var-module.MED); // calculates standard deviation for threhsold
                 }
                 else
                 {
@@ -229,9 +221,9 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
             {
             
                 const float sample = RMS[i];
-                double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4));
+                double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation
                 
-                if ( sample >=  threshold & RefratTime > 2 )
+                if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event
                 {
                   module.count++;
                 }
@@ -241,7 +233,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
  		}               
                 if (module.flag == 1)
                 {
-                    t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//clock() - module.tReft;
+                    t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//calculating refractory time
                     RefratTime = t3;
                 }
                 else
@@ -249,7 +241,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                     RefratTime = 3;
                 }
        
-                if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) // o original qdo utilizado com buffer de 1024 pontos é um tamanho de 20 ms (154/(30000/4))
+                if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
                 {
                         module.flag = 1;
 			module.count = 0;
