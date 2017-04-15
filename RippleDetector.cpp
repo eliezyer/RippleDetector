@@ -223,7 +223,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                 const float sample = RMS[i];
                 double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation
                 
-                if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event
+                if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
                 {
                   module.count++;
                 }
@@ -231,30 +231,22 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
 		{
 		  module.count = 0;
  		}               
-                if (module.flag == 1)
+                if (module.flag == 1) //if it had a detector activation, starts to recalculate refrat time
                 {
                     t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//calculating refractory time
                     RefratTime = t3;
                 }
-                else
+                else //if module.flag == 0, then the script is just starting and refractory time is adjusted for a a value that works
                 {
                     RefratTime = 3;
                 }
        
                 if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
                 {
+			//below from here starts the activation for sending the TTL to the actuator
                         module.flag = 1;
 			module.count = 0;
-                        module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
-                        //double timeStamp2 = (module.tReft - t); 
-                        
-                        //saving the script delay
-                 //       FILE *f = fopen("timeStamps.txt", "a+");
-                        
-                 //       fprintf(f,"%f\n ",timeStamp2*1000);
-
-                 //       fclose(f); 
-                        
+                        module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());                        
     
                         addEvent(events, TTL, i, 1, module.outputChan);
                         module.samplesSinceTrigger = 0;
