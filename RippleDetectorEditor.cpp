@@ -1,71 +1,22 @@
-/*
-    ------------------------------------------------------------------
-
-    This file is part of the Open Ephys GUI
-    Copyright (C) 2013 Open Ephys
-
-    ------------------------------------------------------------------
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*/
-
-#include "RippleDetectorEditor.h"
-#include "RippleDetector.h"
+#include "RippleDetector2Editor.h"
+#include "RippleDetector2.h"
 
 #include <stdio.h>
 #include <cmath>
 
+using namespace std;
 
-
-RippleDetectorEditor::RippleDetectorEditor(GenericProcessor* parentNode, bool useDefaultParameterEditors=true)
+RippleDetector2Editor::RippleDetector2Editor(GenericProcessor* parentNode, bool useDefaultParameterEditors=true)
     : GenericEditor(parentNode, useDefaultParameterEditors), previousChannelCount(-1)
 
 {
-    desiredWidth = 220;
-
-    // intputChannelLabel = new Label("input", "Input channel:");
-    // intputChannelLabel->setBounds(15,25,180,20);
-    // intputChannelLabel->setFont(Font("Small Text", 12, Font::plain));
-    // intputChannelLabel->setColour(Label::textColourId, Colours::darkgrey);
-    // addAndMakeVisible(intputChannelLabel);
-
-    // outputChannelLabel = new Label("output", "Output channel:");
-    // outputChannelLabel->setBounds(15,75,180,20);
-    // outputChannelLabel->setFont(Font("Small Text", 12, Font::plain));
-    // outputChannelLabel->setColour(Label::textColourId, Colours::darkgrey);
-    // addAndMakeVisible(outputChannelLabel);
-
-    // inputChannelSelectionBox = new ComboBox();
-    // inputChannelSelectionBox->setBounds(15,45,150,25);
-    // inputChannelSelectionBox->addListener(this);
-    // inputChannelSelectionBox->addItem("None", 1);
-    // inputChannelSelectionBox->setSelectedId(1, false);
-    // addAndMakeVisible(inputChannelSelectionBox);
-
-    detectorSelector = new ComboBox();
-    detectorSelector->setBounds(35,30,150,20);
-    detectorSelector->addListener(this);
-
-    addAndMakeVisible(detectorSelector);
+    desiredWidth = 300;
 
     plusButton = new UtilityButton("+", titleFont);
     plusButton->addListener(this);
     plusButton->setRadius(3.0f);
-    plusButton->setBounds(10,30,20,20);
 
-    addAndMakeVisible(plusButton);
+    addAndMakeVisible(plusButton);   
 
     backgroundColours.add(Colours::green);
     backgroundColours.add(Colours::red);
@@ -75,16 +26,48 @@ RippleDetectorEditor::RippleDetectorEditor(GenericProcessor* parentNode, bool us
 
     plusButton->setToggleState(true, sendNotification);
 
-    //interfaces.clear();
+    lastLowCutString = " ";
+    lastHighCutString = " ";
+    
+    highCutLabel = new Label("high cut label", "Amplitude (sd):");
+    highCutLabel->setBounds(10,75,80,20);
+    highCutLabel->setFont(Font("Small Text", 10, Font::plain));
+    highCutLabel->setColour(Label::textColourId, Colours::darkgrey);
+    addAndMakeVisible(highCutLabel);
+    
+    lowCutLabel = new Label("low cut label", "Time (ms):");
+    lowCutLabel->setBounds(10,35,80,20);
+    lowCutLabel->setFont(Font("Small Text", 10, Font::plain));
+    lowCutLabel->setColour(Label::textColourId, Colours::darkgrey);
+    addAndMakeVisible(lowCutLabel);
 
+    lowCutValue = new Label("low cut value", lastLowCutString);
+    lowCutValue->setBounds(15,52,60,18);
+    lowCutValue->setFont(Font("Default", 15, Font::plain));
+    lowCutValue->setColour(Label::textColourId, Colours::white);
+    lowCutValue->setColour(Label::backgroundColourId, Colours::grey);
+    lowCutValue->setEditable(true);
+    lowCutValue->addListener(this);
+    lowCutValue->setTooltip("Set the low cut for the selected channels");
+    addAndMakeVisible(lowCutValue);
+
+    highCutValue = new Label("high cut label", lastHighCutString);
+    highCutValue->setBounds(15,92,60,18);
+    highCutValue->setFont(Font("Default", 15, Font::plain));
+    highCutValue->setColour(Label::textColourId, Colours::white);
+    highCutValue->setColour(Label::backgroundColourId, Colours::grey);
+    highCutValue->setEditable(true);
+    highCutValue->addListener(this);
+    highCutValue->setTooltip("Set the high cut for the selected channels");
+    addAndMakeVisible(highCutValue);
 }
 
-RippleDetectorEditor::~RippleDetectorEditor()
+RippleDetector2Editor::~RippleDetector2Editor()
 {
 
 }
 
-void RippleDetectorEditor::updateSettings()
+void RippleDetector2Editor::updateSettings()
 {
 
     if (getProcessor()->getNumInputs() != previousChannelCount)
@@ -100,7 +83,7 @@ void RippleDetectorEditor::updateSettings()
 
 }
 
-void RippleDetectorEditor::comboBoxChanged(ComboBox* c)
+void RippleDetector2Editor::comboBoxChanged(ComboBox* c)
 {
 
     for (int i = 0; i < interfaces.size(); i++)
@@ -119,53 +102,32 @@ void RippleDetectorEditor::comboBoxChanged(ComboBox* c)
 
 }
 
-void RippleDetectorEditor::buttonEvent(Button* button)
+void RippleDetector2Editor::buttonEvent(Button* button)
 {
-    if (button == plusButton && interfaces.size() < 5)
-    {
 
         addDetector();
-
-    }
-
 }
 
-void RippleDetectorEditor::addDetector()
+void RippleDetector2Editor::addDetector()
 {
-    std::cout << "Adding detector" << std::endl;
 
-    RippleDetector* sd = (RippleDetector*) getProcessor();
+    RippleDetector2* sd = (RippleDetector2*) getProcessor();
 
     int detectorNumber = interfaces.size()+1;
 
     RippleInterface* di = new RippleInterface(sd, backgroundColours[detectorNumber%5], detectorNumber-1);
-    di->setBounds(10,50,190,80);
+    di->setBounds(90,40,190,80);
 
     addAndMakeVisible(di);
 
     interfaces.add(di);
 
-    String itemName = "Detector ";
-    itemName += detectorNumber;
-
-    //jassert detectorNumber == 1;
-
-    //std::cout << itemName << std::endl;
-
-    detectorSelector->addItem(itemName, detectorNumber);
-    detectorSelector->setSelectedId(detectorNumber, dontSendNotification);
-
-    for (int i = 0; i < interfaces.size()-1; i++)
-    {
-        interfaces[i]->setVisible(false);
-    }
-
 }
 
-void RippleDetectorEditor::saveCustomParameters(XmlElement* xml)
+void RippleDetector2Editor::saveCustomParameters(XmlElement* xml)
 {
 
-    xml->setAttribute("Type", "RippleDetectorEditor");
+    xml->setAttribute("Type", "RippleDetector2Editor");
 
     for (int i = 0; i < interfaces.size(); i++)
     {
@@ -175,9 +137,16 @@ void RippleDetectorEditor::saveCustomParameters(XmlElement* xml)
         d->setAttribute("GATE",interfaces[i]->getGateChan());
         d->setAttribute("OUTPUT",interfaces[i]->getOutputChan());
     }
+    
+    lastHighCutString = highCutValue->getText();
+    lastLowCutString = lowCutValue->getText();
+
+    XmlElement* textLabelValues = xml->createNewChildElement("VALUES");
+    textLabelValues->setAttribute("HighCut",lastHighCutString);
+    textLabelValues->setAttribute("LowCut",lastLowCutString);
 }
 
-void RippleDetectorEditor::loadCustomParameters(XmlElement* xml)
+void RippleDetector2Editor::loadCustomParameters(XmlElement* xml)
 {
 
     int i = 0;
@@ -191,7 +160,7 @@ void RippleDetectorEditor::loadCustomParameters(XmlElement* xml)
             {
                 addDetector();
             }
-
+            
             interfaces[i]->setPhase(xmlNode->getIntAttribute("PHASE"));
             interfaces[i]->setInputChan(xmlNode->getIntAttribute("INPUT"));
             interfaces[i]->setGateChan(xmlNode->getIntAttribute("GATE"));
@@ -199,13 +168,18 @@ void RippleDetectorEditor::loadCustomParameters(XmlElement* xml)
 
             i++;
         }
+
+        else if (xmlNode->hasTagName("VALUES"))
+        {
+            highCutValue->setText(xmlNode->getStringAttribute("HighCut"),dontSendNotification);
+            lowCutValue->setText(xmlNode->getStringAttribute("LowCut"),dontSendNotification);
+        }
     }
 }
 
-
 // ===================================================================
 
-RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
+RippleInterface::RippleInterface(RippleDetector2* sd, Colour c, int id) :
     backgroundColour(c), idNum(id), processor(sd)
 {
 
@@ -215,7 +189,7 @@ RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
 
     sineWave.startNewSubPath(5,35);
 
-    std::cout << "Creating sine wave" << std::endl;
+    cout << "Creating sine wave" << endl;
 
     for (double i = 0; i < 2*PI; i += PI/80)
     {
@@ -230,25 +204,9 @@ RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
         }
     }
 
-   // sineWave.addEllipse(2,35,4,4);
+    cout << "Creating phase buttons" << endl;
 
-    std::cout << "Creating phase buttons" << std::endl;
-
-   /* for (int phase = 0; phase < 4; phase++)
-    {
-        ElectrodeButton* phaseButton = new ElectrodeButton(-1);
-
-        double theta = PI/2+phase*PI/2;
-
-        phaseButton->setBounds(theta*12+1.0f, -sin(theta)*20 + 31, 8, 8);
-        phaseButton->setToggleState(false, dontSendNotification);
-        phaseButton->setRadioGroupId(12);
-        phaseButton->addListener(this);
-        phaseButtons.add(phaseButton);
-        addAndMakeVisible(phaseButton);
-    }*/
-
-    std::cout << "Creating combo boxes" << std::endl;
+    cout << "Creating combo boxes" << endl;
 
 
     inputSelector = new ComboBox();
@@ -263,7 +221,7 @@ RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
     gateSelector->addItem("-",1);
     gateSelector->addListener(this);
 
-    std::cout << "Populating combo boxes" << std::endl;
+    cout << "Populating combo boxes" << endl;
 
 
     for (int i = 1; i < 9; i++)
@@ -287,11 +245,11 @@ RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
     addAndMakeVisible(outputSelector);
 
 
-    std::cout << "Updating channels" << std::endl;
+    cout << "Updating channels" << endl;
 
     updateChannels(processor->getNumInputs());
 
-    std::cout << "Updating processor" << std::endl;
+    cout << "Updating processor" << endl;
 
 
     processor->addModule();
@@ -394,8 +352,7 @@ void RippleInterface::setPhase(int p)
 
     if (p >= 0)
         phaseButtons[p]->setToggleState(true, dontSendNotification);
-
-
+    
     processor->setActiveModule(idNum);
 
     processor->setParameter(1, (float) p+1);
@@ -436,4 +393,69 @@ int RippleInterface::getOutputChan()
 int RippleInterface::getGateChan()
 {
     return gateSelector->getSelectedId()-2;
+} 
+
+void RippleDetector2Editor::setDefaults(double lowCut, double highCut)
+{
+    lastHighCutString = String(roundFloatToInt(highCut));
+    lastLowCutString = String(roundFloatToInt(lowCut));
+
+    highCutValue->setText(lastHighCutString, dontSendNotification);
+    lowCutValue->setText(lastLowCutString, dontSendNotification);
+}
+
+void RippleDetector2Editor::labelTextChanged(Label* label)
+{
+    RippleDetector2* sd = (RippleDetector2*) getProcessor();
+
+    Value val = label->getTextValue();
+    double requestedValue = double(val.getValue());
+
+    if (requestedValue < 0.01 || requestedValue > 10000)
+    {
+        CoreServices::sendStatusMessage("Value out of range.");
+
+        if (label == highCutValue)
+        {
+            label->setText(lastHighCutString, dontSendNotification);
+            lastHighCutString = label->getText();
+        }
+        else
+        {
+            label->setText(lastLowCutString, dontSendNotification);
+            lastLowCutString = label->getText();
+        }
+
+        return;
+    }
+
+    Array<int> chans = getActiveChannels();
+
+
+    for (int n = 0; n < chans.size(); n++)
+    {
+
+        if (label == highCutValue)
+        {
+
+                sd->setCurrentChannel(chans[n]);
+
+                sd->setParameter(1, requestedValue);
+
+
+            lastHighCutString = label->getText();
+
+        }
+        else
+        {
+
+                sd->setCurrentChannel(chans[n]);
+                sd->setParameter(0, requestedValue);
+
+            lastLowCutString = label->getText();
+
+        }
+
+    }
+
 }
