@@ -1,51 +1,41 @@
-/*
-    ------------------------------------------------------------------
-    This file is part of the Open Ephys GUI
-    Copyright (C) 2015 Open Ephys
-    ------------------------------------------------------------------
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <algorithm>
-#include "RippleDetector.h"
-#include "RippleDetectorEditor.h"
+#include "RippleDetector2.h"
+#include "RippleDetector2Editor.h"
 
-RippleDetector::RippleDetector()
-    : GenericProcessor("Ripple Detector"), activeModule(-1),
-      risingPos(false), risingNeg(false), fallingPos(false), fallingNeg(false)
+using namespace std;
 
+RippleDetector2::RippleDetector2()
+    : GenericProcessor("2Ripple Detector"), activeModule(-1),
+      defaultLowCut(20.0),
+      defaultHighCut(2.00f)
+{
+
+//    setProcessorType (PROCESSOR_TYPE_FILTER);
+}
+
+RippleDetector2::~RippleDetector2()
 {
 
 }
 
-RippleDetector::~RippleDetector()
+AudioProcessorEditor* RippleDetector2::createEditor()
 {
+    editor = new RippleDetector2Editor(this, true);
 
+    cout << "Creating Editor." << endl;
+
+    RippleDetector2Editor* ed = (RippleDetector2Editor*) getEditor();
+    ed->setDefaults (defaultLowCut, defaultHighCut);
+
+    return editor;
 }
 
-AudioProcessorEditor* RippleDetector::createEditor()
+void RippleDetector2::addModule()
 {
-    return editor = new RippleDetectorEditor(this, true);
 
-    std::cout << "Creating editor." << std::endl;
-
-    //return editor;
-}
-
-void RippleDetector::addModule()
-{
     DetectorModule m = DetectorModule();
     m.inputChan = -1;
     m.outputChan = -1;
@@ -69,16 +59,15 @@ void RippleDetector::addModule()
 }
 
 
-void RippleDetector::setActiveModule(int i)
+void RippleDetector2::setActiveModule(int i)
 {
+
     activeModule = i;
+}                                                                                                             
 
-}
 
-
-void RippleDetector::setParameter(int parameterIndex, float newValue)
+void RippleDetector2::setParameter(int parameterIndex, float newValue)
 {
-
     DetectorModule& module = modules.getReference(activeModule);
 
     if (parameterIndex == 1) // module type
@@ -128,30 +117,83 @@ void RippleDetector::setParameter(int parameterIndex, float newValue)
         }
     }
 
+    if (parameterIndex < 2) // change filter settings
+    {
+        if (newValue <= 0.01 || newValue >= 10000.0f)
+            return;
+
+        if (parameterIndex == 0)
+        {
+            lowCuts.set (currentChannel,newValue);
+        }
+        else if (parameterIndex == 1)
+        {
+            highCuts.set (currentChannel,newValue);
+        }
+
+        setFilterParameters (lowCuts[currentChannel],
+                             highCuts[currentChannel],
+                             currentChannel);
+
+        editor->updateParameterButtons (parameterIndex);
+    }
+
 }
 
-void RippleDetector::updateSettings()
+void RippleDetector2::updateSettings()
 {
+
+    int numInputs = getNumInputs();
+    
+    if (numInputs < 1024)
+    {
+        Array<double> oldlowCuts;
+        Array<double> oldhighCuts;
+        oldlowCuts = lowCuts;
+        oldhighCuts = highCuts;
+
+        lowCuts.clear();
+        highCuts.clear();
+
+        for (int n = 0; n < getNumInputs(); ++n)
+        {
+            float newLowCut  = 0.f;
+            float newHighCut = 0.f;
+
+            if (oldlowCuts.size() > n)
+            {
+                newLowCut  = oldlowCuts[n];
+                newHighCut = oldhighCuts[n];
+            }
+            else
+            {
+                newLowCut  = defaultLowCut;
+                newHighCut = defaultHighCut;
+            }
+
+
+            lowCuts.add  (newLowCut);
+            highCuts.add (newHighCut);
+
+            setFilterParameters (newLowCut, newHighCut, n);
+        }
+    }
+
 
 }
 
-bool RippleDetector::enable()
+bool RippleDetector2::enable()
 {
+
     return true;
 }
 
-void RippleDetector::handleEvent(int eventType, MidiMessage& event, int sampleNum)
+void RippleDetector2::handleEvent(int eventType, MidiMessage& event, int sampleNum)
 {
-    // MOVED GATING TO PULSE PAL OUTPUT!
-    // now use to randomize phase for next trial
-
-//    std::cout << "GOT EVENT." << std::endl;
-
     if (eventType == TTL)
     {
         const uint8* dataptr = event.getRawData();
 
-        // int eventNodeId = *(dataptr+1);
         int eventId = *(dataptr+2);
         int eventChannel = *(dataptr+3);
 
@@ -172,9 +214,22 @@ void RippleDetector::handleEvent(int eventType, MidiMessage& event, int sampleNu
 
 }
 
-void RippleDetector::process(AudioSampleBuffer& buffer,
+double RippleDetector2::getLowCutValueForChannel (int chan) const
+{
+
+    return lowCuts[chan];
+}
+
+double RippleDetector2::getHighCutValueForChannel (int chan) const
+{
+
+    return highCuts[chan];
+}
+
+void RippleDetector2::process(AudioSampleBuffer& buffer,
                             MidiBuffer& events) //This is the core of the code, is the script that will run when every buffer comes
 {
+
     Time time; //I'm using a library to count time
     checkForEvents(events);
     // loop through the modules
@@ -185,8 +240,12 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
         double t;    
         double t3;
         double RefratTime;
-            
-            
+        double ThresholdAmplitude = 2.00;
+        double ThresholdTime = 0.020;/*<- THIS IS THE TIME THRESHOLD*/ //Divide it for 1000 when it comes from the user input, for now
+
+        ThresholdTime = TimeT/1000;
+        ThresholdAmplitude = amplitude;
+        
             t = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());//Starting to count time for the script here
             double arrSized = round(getNumSamples(module.inputChan)/4);//the following 3 lines are to create an array of specific size for saving the RMS from buffer
             int arrSize = (int) arrSized;
@@ -221,16 +280,16 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
             {
             
                 const float sample = RMS[i];
-                double threshold = module.MED + 2.00*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation
+                double threshold = module.MED + ThresholdAmplitude*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation                
                 
                 if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
-                {
+                {                
                   module.count++;
                 }
-		else if(sample < threshold & i == 0)//protect from acumulation
-		{
-		  module.count = 0;
- 		}               
+		              else if(sample < threshold & i == 0)//protect from acumulation
+		            {
+		                 module.count = 0;
+ 	             	}               
                 if (module.flag == 1) //if it had a detector activation, starts to recalculate refrat time
                 {
                     t3 = ( double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond()) )- module.tReft;//calculating refractory time
@@ -241,18 +300,19 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                     RefratTime = 3;
                 }
        
-                if (module.count >= round(0.020*30000/4) & RefratTime > 2 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
+                if (module.count >= round(ThresholdTime*30000/4) & RefratTime > 2 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
                 {
 			//below from here starts the activation for sending the TTL to the actuator
+			
                         module.flag = 1;
-			module.count = 0;
-                        module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());                        
+			                  module.count = 0;
+                        module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
     
                         addEvent(events, TTL, i, 1, module.outputChan);
                         module.samplesSinceTrigger = 0;
 
                         module.wasTriggered = true;
-                        //std::cout << averageTime << std::endl;
+                        
                 }
                 module.lastSample = sample;
 
@@ -274,19 +334,18 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
 
     }
 
+    for (int n = 0; n < getNumOutputs(); ++n)
+    {
+            float* ptr = buffer.getWritePointer (n);
+    }
+
 }
 
-void RippleDetector::estimateFrequency()
-{}
+void RippleDetector2::setFilterParameters (double lowCut, double highCut, int chan)
+{
+    if (channels.size() - 1 < chan)
+        return;
 
-    // int N = (numPeakIntervals < NUM_INTERVALS) ? numPeakIntervals
-    //         : NUM_INTERVALS;
-
-    // int sum = 0;
-
-    // for (int i = 0; i < N; i++)
-    // {
-    //     sum += peakIntervals[i];
-    // }
-
-    // estimatedFrequency = getSampleRate()/(float(sum)/float(N));
+    TimeT = lowCut;
+    amplitude = highCut;
+}
