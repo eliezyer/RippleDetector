@@ -1,5 +1,5 @@
 #include <PluginInfo.h>
-#include "RippleDetector2.h"
+#include "RippleDetector.h"
 #include <string>
 #ifdef WIN32
 #include <Windows.h>
@@ -26,9 +26,9 @@ extern "C" EXPORT int getPluginInfo(int index, Plugin::PluginInfo* info)
 	case 0:
 //		info->type = Plugin::PLUGIN_TYPE_PROCESSOR;
     info->type = Plugin::ProcessorPlugin;
-		info->processor.name = "2Ripple Detector"; //Processor name shown in the GUI
+		info->processor.name = "Ripple Detector"; //Processor name shown in the GUI
 		info->processor.type = Plugin::FilterProcessor;
-		info->processor.creator = &(Plugin::createProcessor<RippleDetector2>);
+		info->processor.creator = &(Plugin::createProcessor<RippleDetector>);
 		break;
 		
 	default:
