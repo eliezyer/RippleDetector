@@ -299,7 +299,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
             for (int i = 0; i < arrSize; i++)
             {
             
-                const float slle = RMS[i];
+                const float sample = RMS[i];
                 double threshold = module.MED + ThresholdAmplitude*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation                
                 
                 if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
