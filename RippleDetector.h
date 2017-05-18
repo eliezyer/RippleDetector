@@ -112,4 +112,4 @@ private:
 
 };
 
-#endif  // __RippleDETECTOR2_H__
+#endif  // __RippleDETECTOR_H__
