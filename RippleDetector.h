@@ -1,22 +1,5 @@
-/*
-    ------------------------------------------------------------------
-    This file is part of the Open Ephys GUI
-    Copyright (C) 2015 Open Ephys
-    ------------------------------------------------------------------
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#ifndef __RIPPLEDETECTOR_H_F411F29D__
-#define __RIPPLEDETECTOR_H_F411F29D__
+#ifndef __RIPPLEDETECTOR2_H__
+#define __RIPPLEDETECTOR2_H__
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -24,17 +7,19 @@
 
 #include <ProcessorHeaders.h>
 
-
 #define NUM_INTERVALS 5
 
-class RippleDetector : public GenericProcessor
+class RippleDetector2 : public GenericProcessor
 
 {
 public:
 
-    RippleDetector();
-    ~RippleDetector();
-    //float getNextSample(int SampInd, int chan);
+    RippleDetector2();
+    ~RippleDetector2();
+
+    double getLowCutValueForChannel  (int chan) const;
+    double getHighCutValueForChannel (int chan) const;
+
     void process(AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
     void setParameter(int parameterIndex, float newValue);
     
@@ -53,6 +38,8 @@ public:
     void addModule();
     void setActiveModule(int);
     
+    bool hasEditor2() const { return true; }
+
 
 private:
 
@@ -91,15 +78,21 @@ private:
     Array<DetectorModule> modules;
 
     int activeModule;
-
+    
     void handleEvent(int eventType, MidiMessage& event, int sampleNum);
 
-    bool risingPos, risingNeg, fallingPos, fallingNeg;
+    void setFilterParameters (double, double, int);
 
-    void estimateFrequency();
+    Array<double> lowCuts;
+    Array<double> highCuts;
+    double TimeT;
+    double amplitude;
+
+    double defaultLowCut;
+    double defaultHighCut;
     
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetector);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetector2);
 
 };
 
-#endif  // __RippleDETECTOR_H_F411F29D__
+#endif  // __RippleDETECTOR2_H__
