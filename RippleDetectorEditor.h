@@ -1,20 +1,37 @@
-#ifndef __RippleDETECTOR2EDITOR_H__
-#define __RippleDETECTOR2EDITOR_H__
+/*
+    ------------------------------------------------------------------
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2017 Open Ephys
+    ------------------------------------------------------------------
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef __RippleDETECTOREDITOR_H__
+#define __RippleDETECTOREDITOR_H__
 
 #include <EditorHeaders.h>
 
 class RippleInterface;
-class RippleDetector2;
+class RippleDetector;
 class ElectrodeButton;
 class FilterViewport;
 
-class RippleDetector2Editor : public GenericEditor,
+class RippleDetectorEditor : public GenericEditor,
     public ComboBox::Listener,
     public Label::Listener
 {
 public:
-    RippleDetector2Editor(GenericProcessor* parentNode, bool useDefaultParameterEditors);
-    virtual ~RippleDetector2Editor();
+    RippleDetectorEditor(GenericProcessor* parentNode, bool useDefaultParameterEditors);
+    virtual ~RippleDetectorEditor();
 
     void buttonEvent(Button* button);
 
@@ -50,7 +67,7 @@ private:
     ScopedPointer<Label> highCutValue;
     ScopedPointer<Label> lowCutValue;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetector2Editor);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetectorEditor);
 
 };
 
@@ -59,7 +76,7 @@ class RippleInterface : public Component,
     public Button::Listener
 {
 public:
-    RippleInterface(RippleDetector2*, Colour, int);
+    RippleInterface(RippleDetector*, Colour, int);
     ~RippleInterface();
 
     void paint(Graphics& g);
@@ -88,7 +105,7 @@ private:
 
     int idNum;
 
-    RippleDetector2* processor;
+    RippleDetector* processor;
 
     OwnedArray<ElectrodeButton> phaseButtons;
 
