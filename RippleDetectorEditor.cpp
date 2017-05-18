@@ -179,7 +179,7 @@ void RippleDetectorEditor::loadCustomParameters(XmlElement* xml)
 
 // ===================================================================
 
-RippleInterface::RippleInterface(RippleDetector2* sd, Colour c, int id) :
+RippleInterface::RippleInterface(RippleDetector* sd, Colour c, int id) :
     backgroundColour(c), idNum(id), processor(sd)
 {
 
