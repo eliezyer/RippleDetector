@@ -20,13 +20,13 @@
 #include <math.h>
 #include <time.h>
 #include <algorithm>
-#include "RippleDetector2.h"
-#include "RippleDetector2Editor.h"
+#include "RippleDetector.h"
+#include "RippleDetectorEditor.h"
 
 using namespace std;
 
-RippleDetector2::RippleDetector2()
-    : GenericProcessor("2Ripple Detector"), activeModule(-1),
+RippleDetector::RippleDetector()
+    : GenericProcessor("Ripple Detector"), activeModule(-1),
       defaultLowCut(20.0),
       defaultHighCut(2.00f)
 {
@@ -34,24 +34,24 @@ RippleDetector2::RippleDetector2()
 //    setProcessorType (PROCESSOR_TYPE_FILTER);
 }
 
-RippleDetector2::~RippleDetector2()
+RippleDetector::~RippleDetector()
 {
 
 }
 
-AudioProcessorEditor* RippleDetector2::createEditor()
+AudioProcessorEditor* RippleDetector::createEditor()
 {
-    editor = new RippleDetector2Editor(this, true);
+    editor = new RippleDetectorEditor(this, true);
 
     cout << "Creating Editor." << endl;
 
-    RippleDetector2Editor* ed = (RippleDetector2Editor*) getEditor();
+    RippleDetectorEditor* ed = (RippleDetectorEditor*) getEditor();
     ed->setDefaults (defaultLowCut, defaultHighCut);
 
     return editor;
 }
 
-void RippleDetector2::addModule()
+void RippleDetector::addModule()
 {
 
     DetectorModule m = DetectorModule();
@@ -77,14 +77,14 @@ void RippleDetector2::addModule()
 }
 
 
-void RippleDetector2::setActiveModule(int i)
+void RippleDetector::setActiveModule(int i)
 {
 
     activeModule = i;
 }                                                                                                             
 
 
-void RippleDetector2::setParameter(int parameterIndex, float newValue)
+void RippleDetector::setParameter(int parameterIndex, float newValue)
 {
     DetectorModule& module = modules.getReference(activeModule);
 
@@ -158,7 +158,7 @@ void RippleDetector2::setParameter(int parameterIndex, float newValue)
 
 }
 
-void RippleDetector2::updateSettings()
+void RippleDetector::updateSettings()
 {
 
     int numInputs = getNumInputs();
@@ -200,13 +200,13 @@ void RippleDetector2::updateSettings()
 
 }
 
-bool RippleDetector2::enable()
+bool RippleDetector::enable()
 {
 
     return true;
 }
 
-void RippleDetector2::handleEvent(int eventType, MidiMessage& event, int sampleNum)
+void RippleDetector::handleEvent(int eventType, MidiMessage& event, int sampleNum)
 {
     if (eventType == TTL)
     {
@@ -233,19 +233,19 @@ void RippleDetector2::handleEvent(int eventType, MidiMessage& event, int sampleN
 }
 
 
-double RippleDetector2::getLowCutValueForChannel (int chan) const
+double RippleDetector::getLowCutValueForChannel (int chan) const
 {
 
     return lowCuts[chan];
 }
 
-double RippleDetector2::getHighCutValueForChannel (int chan) const
+double RippleDetector::getHighCutValueForChannel (int chan) const
 {
 
     return highCuts[chan];
 }
 
-void RippleDetector2::process(AudioSampleBuffer& buffer,
+void RippleDetector::process(AudioSampleBuffer& buffer,
                             MidiBuffer& events) //This is the core of the code, is the script that will run when every buffer comes
 {
 
@@ -364,7 +364,7 @@ void RippleDetector2::process(AudioSampleBuffer& buffer,
 
 }
 
-void RippleDetector2::setFilterParameters (double lowCut, double highCut, int chan)
+void RippleDetector::setFilterParameters (double lowCut, double highCut, int chan)
 {
     if (channels.size() - 1 < chan)
         return;
