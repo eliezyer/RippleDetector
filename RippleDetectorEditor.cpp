@@ -62,7 +62,7 @@ RippleDetectorEditor::RippleDetectorEditor(GenericProcessor* parentNode, bool us
     addAndMakeVisible(highCutValue);
 }
 
-RippleDetector2Editor::~RippleDetectorEditor()
+RippleDetectorEditor::~RippleDetectorEditor()
 {
 
 }
@@ -111,7 +111,7 @@ void RippleDetectorEditor::buttonEvent(Button* button)
 void RippleDetectorEditor::addDetector()
 {
 
-    RippleDetector2* sd = (RippleDetector2*) getProcessor();
+    RippleDetector* sd = (RippleDetector*) getProcessor();
 
     int detectorNumber = interfaces.size()+1;
 
@@ -127,7 +127,7 @@ void RippleDetectorEditor::addDetector()
 void RippleDetectorEditor::saveCustomParameters(XmlElement* xml)
 {
 
-    xml->setAttribute("Type", "RippleDetector2Editor");
+    xml->setAttribute("Type", "RippleDetectorEditor");
 
     for (int i = 0; i < interfaces.size(); i++)
     {
@@ -406,7 +406,7 @@ void RippleDetectorEditor::setDefaults(double lowCut, double highCut)
 
 void RippleDetectorEditor::labelTextChanged(Label* label)
 {
-    RippleDetector2* sd = (RippleDetector2*) getProcessor();
+    RippleDetector* sd = (RippleDetector*) getProcessor();
 
     Value val = label->getTextValue();
     double requestedValue = double(val.getValue());
