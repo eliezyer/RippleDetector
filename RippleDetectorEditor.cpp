@@ -1,12 +1,12 @@
-#include "RippleDetector2Editor.h"
-#include "RippleDetector2.h"
+#include "RippleDetectorEditor.h"
+#include "RippleDetector.h"
 
 #include <stdio.h>
 #include <cmath>
 
 using namespace std;
 
-RippleDetector2Editor::RippleDetector2Editor(GenericProcessor* parentNode, bool useDefaultParameterEditors=true)
+RippleDetectorEditor::RippleDetectorEditor(GenericProcessor* parentNode, bool useDefaultParameterEditors=true)
     : GenericEditor(parentNode, useDefaultParameterEditors), previousChannelCount(-1)
 
 {
@@ -62,12 +62,12 @@ RippleDetector2Editor::RippleDetector2Editor(GenericProcessor* parentNode, bool 
     addAndMakeVisible(highCutValue);
 }
 
-RippleDetector2Editor::~RippleDetector2Editor()
+RippleDetector2Editor::~RippleDetectorEditor()
 {
 
 }
 
-void RippleDetector2Editor::updateSettings()
+void RippleDetectorEditor::updateSettings()
 {
 
     if (getProcessor()->getNumInputs() != previousChannelCount)
@@ -83,7 +83,7 @@ void RippleDetector2Editor::updateSettings()
 
 }
 
-void RippleDetector2Editor::comboBoxChanged(ComboBox* c)
+void RippleDetectorEditor::comboBoxChanged(ComboBox* c)
 {
 
     for (int i = 0; i < interfaces.size(); i++)
@@ -102,13 +102,13 @@ void RippleDetector2Editor::comboBoxChanged(ComboBox* c)
 
 }
 
-void RippleDetector2Editor::buttonEvent(Button* button)
+void RippleDetectorEditor::buttonEvent(Button* button)
 {
 
         addDetector();
 }
 
-void RippleDetector2Editor::addDetector()
+void RippleDetectorEditor::addDetector()
 {
 
     RippleDetector2* sd = (RippleDetector2*) getProcessor();
@@ -124,7 +124,7 @@ void RippleDetector2Editor::addDetector()
 
 }
 
-void RippleDetector2Editor::saveCustomParameters(XmlElement* xml)
+void RippleDetectorEditor::saveCustomParameters(XmlElement* xml)
 {
 
     xml->setAttribute("Type", "RippleDetector2Editor");
@@ -146,7 +146,7 @@ void RippleDetector2Editor::saveCustomParameters(XmlElement* xml)
     textLabelValues->setAttribute("LowCut",lastLowCutString);
 }
 
-void RippleDetector2Editor::loadCustomParameters(XmlElement* xml)
+void RippleDetectorEditor::loadCustomParameters(XmlElement* xml)
 {
 
     int i = 0;
@@ -395,7 +395,7 @@ int RippleInterface::getGateChan()
     return gateSelector->getSelectedId()-2;
 } 
 
-void RippleDetector2Editor::setDefaults(double lowCut, double highCut)
+void RippleDetectorEditor::setDefaults(double lowCut, double highCut)
 {
     lastHighCutString = String(roundFloatToInt(highCut));
     lastLowCutString = String(roundFloatToInt(lowCut));
@@ -404,7 +404,7 @@ void RippleDetector2Editor::setDefaults(double lowCut, double highCut)
     lowCutValue->setText(lastLowCutString, dontSendNotification);
 }
 
-void RippleDetector2Editor::labelTextChanged(Label* label)
+void RippleDetectorEditor::labelTextChanged(Label* label)
 {
     RippleDetector2* sd = (RippleDetector2*) getProcessor();
 
