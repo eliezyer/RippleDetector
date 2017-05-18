@@ -1,5 +1,22 @@
-#ifndef __RIPPLEDETECTOR2_H__
-#define __RIPPLEDETECTOR2_H__
+/*
+    ------------------------------------------------------------------
+    This file is part of the Open Ephys GUI
+    Copyright (C) 2017 Open Ephys
+    ------------------------------------------------------------------
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef __RIPPLEDETECTOR_H__
+#define __RIPPLEDETECTOR_H__
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -9,13 +26,13 @@
 
 #define NUM_INTERVALS 5
 
-class RippleDetector2 : public GenericProcessor
+class RippleDetector : public GenericProcessor
 
 {
 public:
 
-    RippleDetector2();
-    ~RippleDetector2();
+    RippleDetector();
+    ~RippleDetector();
 
     double getLowCutValueForChannel  (int chan) const;
     double getHighCutValueForChannel (int chan) const;
@@ -91,7 +108,7 @@ private:
     double defaultLowCut;
     double defaultHighCut;
     
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetector2);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RippleDetector);
 
 };
 
