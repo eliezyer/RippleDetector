@@ -88,6 +88,7 @@ private:
         double tReft;
 	int count;
 	float lastSample;
+	double BLThreshold[60000/4];
         ModuleType type;
         PhaseType phase;
     };
