@@ -70,8 +70,8 @@ void RippleDetector::addModule()
     m.flag = 0;
     m.tReft = 0.0;
     m.count = 0;
-    
-    
+    int arrLen = 60000/4;
+    m.BLThreshold[arrLen];
     modules.add(m);
 
 }
@@ -279,28 +279,55 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                    pow(buffer.getSample(module.inputChan,(index*4)+3),2)
                 )/4 );
             }
+    
+	    int size = 60000/4;
+	    if (module.AvgCount >= size)
+	    {
+	    	for (int i = arrSize; i < size; i++)
+	       	{
+	        	module.BLThreshold[i-arrSize] = module.BLThreshold[i];
+            	}
+	    }
             
             for (int pac = 0; pac < arrSize; pac++)
             {
-                if (module.AvgCount < 60000/4) //Using the RMS value in the first 2 s as baseline to build a threshold of detection
+                if (module.AvgCount < size) //Using the RMS value in the first 2 s as baseline to build a threshold of detection
                 {
+		    int idx = module.AvgCount;
+		    module.BLThreshold[idx] = RMS[pac];
+
                     module.AvgCount++; // all the values that must be saved from one buffer to other has to be save in another function outside the process (this function), when I need to save values to reuse in the next buffer I use the structure module from addModule function
                     float var = RMS[pac];
                     float delta = var - module.MED;
-                    module.MED = module.MED + (delta/module.AvgCount); //calculates average for threshold
-                    module.STD = module.STD + delta*(var-module.MED); // calculates standard deviation for threhsold
+
                 }
                 else
                 {
-                    break;
+			module.BLThreshold[size-arrSize+pac]=RMS[pac];
                 }
-            }
 
+            }
+	    // calculating average and standard deviation from the array
+	    float sum;
+	    for (int i = 0; i< (size);i++)
+	    {
+		sum += module.BLThreshold[i];
+            }
+	    module.MED = ((float)sum)/size;
+
+	    float sum2;
+	    for (int i = 0; i< (size);i++)
+	    {
+		sum2 += pow(module.BLThreshold[i]-module.MED,2);
+            }
+	    module.STD = sqrt(sum2/(size-1));
+
+	    double threshold = module.MED + ThresholdAmplitude*(module.STD); //building the threshold from average + n*standard deviation                
             for (int i = 0; i < arrSize; i++)
             {
             
                 const float sample = RMS[i];
-                double threshold = module.MED + ThresholdAmplitude*sqrt(module.STD/(module.AvgCount*4)); //building the threshold from average + n*standard deviation                
+                
                 
                 if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
                 {                
