@@ -261,7 +261,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
         double t3;
         double RefratTime;
         double ThresholdAmplitude = 2.00;
-        double ThresholdTime = 0.020;/*<- THIS IS THE TIME THRESHOLD*/ //Divide it for 1000 when it comes from the user input, for now
+        double ThresholdTime = 0.010;/*<- THIS IS THE TIME THRESHOLD*/ //Divide it for 1000 when it comes from the user input, for now
 
         ThresholdTime = TimeT/1000;
         ThresholdAmplitude = amplitude;
@@ -287,7 +287,7 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
 	       	{
 	        	module.BLThreshold[i-arrSize] = module.BLThreshold[i];
             	}
-	    }
+	    }//rotate the baseline threshold to input more data, as a circular buffer
             
             for (int pac = 0; pac < arrSize; pac++)
             {
@@ -297,14 +297,14 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
 		    module.BLThreshold[idx] = RMS[pac];
 
                     module.AvgCount++; // all the values that must be saved from one buffer to other has to be save in another function outside the process (this function), when I need to save values to reuse in the next buffer I use the structure module from addModule function
-                    float var = RMS[pac];
-                    float delta = var - module.MED;
+                 // float var = RMS[pac];
+                 //   float delta = var - module.MED;
 
                 }
-                else
-                {
-			module.BLThreshold[size-arrSize+pac]=RMS[pac];
-                }
+		else
+		{
+		    module.BLThreshold[pac+(module.AvgCount-arrSize)] = RMS[pac]; //updating the array with new values
+		}
 
             }
 	    // calculating average and standard deviation from the array
@@ -329,14 +329,14 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                 const float sample = RMS[i];
                 
                 
-                if ( sample >=  threshold & RefratTime > 2 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
+                if ( sample >=  threshold & RefratTime > .0 ) //counting how many points are above the threshold and if has been 2 s after the last event (refractory period)
                 {                
                   module.count++;
                 }
-		              else if(sample < threshold & i == 0)//protect from acumulation
-		            {
-		                 module.count = 0;
- 	             	}               
+		else if(sample < threshold & i == 0)//protect from acumulation
+		{
+		  module.count = 0;
+ 	        }
 
                 if (module.flag == 1) //if it had a detector activation, starts to recalculate refrat time
                 {
@@ -345,16 +345,16 @@ void RippleDetector::process(AudioSampleBuffer& buffer,
                 }
                 else //if module.flag == 0, then the script is just starting and refractory time is adjusted for a a value that works
                 {
-                    RefratTime = 3;
+                    RefratTime = 1;
                 }
        
 
-                if (module.count >= round(ThresholdTime*30000/4) & RefratTime > 2 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
+                if (module.count >= round(ThresholdTime*30000/4) & RefratTime > .0 ) //this is the time threshold, buffer RMS amplitude must be higher than threshold for a certain period of time, the second term is the Refractory period for the detection, so it hasn't a burst of activation after reaching both thresholds
                 {
 			//below from here starts the activation for sending the TTL to the actuator
 			
                         module.flag = 1;
-			                  module.count = 0;
+			module.count = 0;
                         module.tReft = double(time.getHighResolutionTicks()) / double(time.getHighResolutionTicksPerSecond());
 
     
